@@ -110,21 +110,6 @@ def call() {
 
                             def tgYamlContent = readYaml file: "${props.WORKSPACE}/${props.TESTGRID_YAML_LOCATION}"
 
-
-                            //*************/
-                            echo "Printing TG YAML CONTENT"
-                            echo tgYamlContent
-
-                            //***********/
-
-                            tgYamlContent.emailToList +="NEW_EMAIL_ADDED"
-
-                            //*************/
-                            echo "Printing TG YAML CONTENT after new property added"
-                            echo tgYamlContent
-
-                            //***********/
-
                             if (tgYamlContent.isEmpty()) {
                                 throw new Exception("Testgrid Yaml content is Empty")
                             }
@@ -138,12 +123,15 @@ def call() {
                             log.info("Creating Job config in " + props.JOB_CONFIG_YAML_PATH)
                             // Creating the job config file
                             ws.createJobConfigYamlFile("${props.JOB_CONFIG_YAML_PATH}")
+
+                            echo "Read job config.yaml"
+                            def jobconfigYaml = readYaml file: "${props.JOB_CONFIG_YAML_PATH}"
+                            echo jobconfigYaml.properties.size()
 //                            sh """
 //                                echo The job-config.yaml content :
 //                                cat ${props.JOB_CONFIG_YAML_PATH}
 //                            """
 
-                            tgYamlContent
 
                             log.info("Generating test plans for the product : " + props.PRODUCT)
                             tgExecutor.generateTesPlans(props.PRODUCT, props.JOB_CONFIG_YAML_PATH)
