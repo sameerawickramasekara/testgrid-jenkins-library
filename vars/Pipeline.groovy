@@ -109,9 +109,27 @@ def call() {
                             }
 
                             def tgYamlContent = readYaml file: "${props.WORKSPACE}/${props.TESTGRID_YAML_LOCATION}"
+
+
+                            //*************/
+                            echo "Printing TG YAML CONTENT"
+                            echo tgYamlContent
+
+                            //***********/
+
+                            tgYamlContent.emailToList +="NEW_EMAIL_ADDED"
+
+                            //*************/
+                            echo "Printing TG YAML CONTENT after new property added"
+                            echo tgYamlContent
+
+                            //***********/
+
                             if (tgYamlContent.isEmpty()) {
                                 throw new Exception("Testgrid Yaml content is Empty")
                             }
+
+                            echo tgYamlContent
                             // We need to set the repository properties
                             props.EMAIL_TO_LIST = tgYamlContent.emailToList
                             if(props.EMAIL_TO_LIST == null) {
@@ -120,10 +138,12 @@ def call() {
                             log.info("Creating Job config in " + props.JOB_CONFIG_YAML_PATH)
                             // Creating the job config file
                             ws.createJobConfigYamlFile("${props.JOB_CONFIG_YAML_PATH}")
-                            sh """
-                                echo The job-config.yaml content :
-                                cat ${props.JOB_CONFIG_YAML_PATH}
-                            """
+//                            sh """
+//                                echo The job-config.yaml content :
+//                                cat ${props.JOB_CONFIG_YAML_PATH}
+//                            """
+
+                            tgYamlContent
 
                             log.info("Generating test plans for the product : " + props.PRODUCT)
                             tgExecutor.generateTesPlans(props.PRODUCT, props.JOB_CONFIG_YAML_PATH)
@@ -178,6 +198,7 @@ def call() {
                         }
                     } catch (e) {
                         currentBuild.result = "FAILED"
+                        echo e
                     } finally {
                         alert.sendNotification(currentBuild.result, "completed", "#build_status")
                         alert.sendNotification(currentBuild.result, "completed", "#build_status_verbose")
