@@ -62,6 +62,23 @@ def getTestPlanId(file) {
     return m[0][2].trim()
 }
 
+/**
+ * Extracts the infra combination from testplan id to be displayed in the
+ * blueocean UI parallel stages
+ *
+ * @param testPlanId testplan id
+ *
+ * @return Only the infra combination section from the testplan
+ */
+def extractInfraCombination(testPlanId){
+    def split = testPlanId.split("_")
+    def name=split[2]
+    for (def i = 3; i < split.length - 1; i++) {
+        name += "_" + split[i]
+    }
+    return name
+}
+
 def getRandomNumber(limit) {
     return Math.abs(new Random().nextInt() % limit) + 1 as int
 }

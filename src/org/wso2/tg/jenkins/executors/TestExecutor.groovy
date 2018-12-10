@@ -50,8 +50,7 @@ def runPlan(tPlan, testPlanId) {
     mkdir -p ${props.WORKSPACE}/${testPlanId}/workspace/${props.DEPLOYMENT_LOCATION}
     curl --max-time 6 --retry 6 -o ${props.WORKSPACE}/${testPlanId}/workspace/${props.DEPLOYMENT_LOCATION}/deploy.sh https://raw.githubusercontent.com/wso2/testgrid/master/jobs/test-resources/deploy.sh
     """
-
-    def name = commonUtil.getParameters("${props.WORKSPACE}/${tPlan}")
+    def name = commonUtil.extractInfraCombination(testplanId)
     notifier.sendNotification("STARTED", "parallel \n Infra : " + name, "#build_status_verbose")
     try {
         tgExecutor.runTesPlans(props.PRODUCT,
@@ -80,7 +79,8 @@ def getTestExecutionMap(parallel_executor_count) {
     log.info("Parallel exec count " + parallelExecCount)
     for (int f = 1; f < parallelExecCount + 1 && f <= files.length; f++) {
         def executor = f
-        name = commonUtils.getParameters("${props.WORKSPACE}/test-plans/" + files[f - 1].name)
+        testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/" + files[f - 1].name)
+        name = commonUtils.extractInfraCombination(testplanId)
         tests["${name}"] = {
             node {
                 stage("Parallel Executor : ${executor}") {
@@ -101,14 +101,14 @@ def getTestExecutionMap(parallel_executor_count) {
                                 int fileNo = i
                                 testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/"
                                         + files[fileNo].name)
-                                runPlan(files[i], testplanId)
+//                                runPlan(files[i], testplanId)
                             }
                         } else {
                             for (int i = 0; i < processFileCount; i++) {
                                 int fileNo = processFileCount * (executor - 1) + i
                                 testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/"
                                         + files[fileNo].name)
-                                runPlan(files[fileNo], testplanId)
+//                                runPlan(files[fileNo], testplanId)
                             }
                         }
                     }
