@@ -165,8 +165,16 @@ def call() {
                         def name = "unknown"
                         try {
                             def tests = testExecutor.getTestExecutionMap(props.EXECUTOR_COUNT)
-                            parallel tests
+                            build_results = parallel tests
+                            //////////////////////////////////////////////////////////////////////////
+                            echo build_results.toString()
+
+                            for (k in build_results.keySet()){
+                                println build_results["${k}"].getProperties()
+                            }
+                            //////////////////////////////////////////////////////////////////////////
                         } catch (e) {
+                            echo e
                             currentBuild.result = "FAILED"
                             alert.sendNotification(currentBuild.result, "Parallel", "#build_status_verbose")
                         }

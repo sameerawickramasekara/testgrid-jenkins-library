@@ -18,6 +18,8 @@
 
 package org.wso2.tg.jenkins.executors
 
+import com.cloudbees.groovy.cps.NonCPS
+import org.jenkinsci.plugins.workflow.job.views.FlowGraphAction
 import org.wso2.tg.jenkins.Logger
 import org.wso2.tg.jenkins.Properties
 import org.wso2.tg.jenkins.alert.Slack
@@ -25,6 +27,12 @@ import org.wso2.tg.jenkins.util.AWSUtils
 import org.wso2.tg.jenkins.util.Common
 import org.wso2.tg.jenkins.util.FileUtils
 import org.wso2.tg.jenkins.util.RuntimeUtils
+
+import hudson.model.Action;
+
+import org.jenkinsci.plugins.workflow.graph.FlowNode
+import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode
+import org.jenkinsci.plugins.workflow.actions.LabelAction
 
 def runPlan(tPlan, testPlanId) {
     def commonUtil = new Common()
@@ -85,6 +93,39 @@ def getTestExecutionMap(parallel_executor_count) {
             node {
                 stage("Parallel Executor : ${executor}") {
                     script {
+
+                        def build = currentBuild.getRawBuild()
+                        def actions = build.getAllActions();
+                        actions.each{act ->
+                            if(act instanceof FlowGraphAction){
+                                def nodes = act.getNodes();
+                                nodes.each{node ->
+                                    if(node instanceof StepStartNode){
+                                        if(node.displayName.endsWith(name)){
+                                            println(name + " : " + node.id)
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+
+
+//                        def execution = build.getExecution()
+//                        echo "execution " + execution.toString()
+//
+//                        def executionHeads = execution.getCurrentHeads()
+//                        echo "executionHeads" + executionHeads.toString()
+//
+//                        def stepStartNode = getStepStartNode(executionHeads)
+
+//                        if(stepStartNode){
+//                            echo stepStartNode.getDisplayName().toString()
+//                        }
+//
+//                        echo "DISPLAY_NAME"
+//                        echo stepStartNode.getDisplayName()
+
                         int processFileCount = 0
                         if (files.length < parallelExecCount) {
                             processFileCount = 1
@@ -94,7 +135,7 @@ def getTestExecutionMap(parallel_executor_count) {
                         runtime.unstashTestPlansIfNotAvailable("${props.WORKSPACE}/testplans")
                         if (executor == parallelExecCount) {
                             for (int i = processFileCount * (executor - 1); i < files.length; i++) {
-                                /*IMPORTANT: Instead of using 'i' directly in your logic below, 
+                                /*IMPORTANT: Instead of using 'i' directly in your logic below,
                                 you should assign it to a new variable and use it.
                                 (To avoid same 'i-object' being refered)*/
                                 // Execution logic
@@ -226,5 +267,35 @@ static def getRepositoryBranch(def branch) {
         branch
     } else {
         "master"
+    }
+}
+
+def hasLabelAction(FlowNode flowNode){
+    def actions = flowNode.getActions()
+
+    for (Action action: actions){
+        if (action instanceof LabelAction) {
+            return true
+        }
+    }
+
+    return false
+}
+
+def getStepStartNode(List<FlowNode> flowNodes) {
+    def currentFlowNode = null
+    def labelAction = null
+
+    for (FlowNode flowNode : flowNodes) {
+        println("flownode" + flowNode.displayName)
+        currentFlowNode = flowNode
+        labelAction = false
+
+        if (flowNode instanceof StepStartNode) {
+           println("stepstartnode" + flowNode.displayName)
+           println("stepstartnode id" + flowNode.id)
+            return flowNode
+        }
+
     }
 }
