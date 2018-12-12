@@ -75,41 +75,29 @@ def runPlan(tPlan, testPlanId) {
 }
 
 def getTestExecutionMap(parallel_executor_count) {
-    def runtime = new RuntimeUtils()
+//    def runtime = new RuntimeUtils()
     def commonUtils = new Common()
-    def log = new Logger()
-    def props = Properties.instance
-    def parallelExecCount = parallel_executor_count as int
+//    def log = new Logger()
+//    def props = Properties.instance
+//    def parallelExecCount = parallel_executor_count as int
     def name = "unknown"
     def tests = [:]
-    def files = findFiles(glob: '**/test-plans/*.yaml')
-    log.info("Found ${files.length} testplans")
-    log.info("Parallel exec count " + parallelExecCount)
-    for (int f = 1; f < parallelExecCount + 1 && f <= files.length; f++) {
+//    def files = findFiles(glob: '**/test-plans/*.yaml')
+//    log.info("Found ${files.length} testplans")
+//    log.info("Parallel exec count " + parallelExecCount)
+//    for (int f = 1; f < parallelExecCount + 1 && f <= files.length; f++) {
+    for (int f = 0; f < 2; f++) {
         def executor = f
-        testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/" + files[f - 1].name)
-        name = commonUtils.extractInfraCombination(testplanId)
+//        testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/" + files[f - 1].name)
+        name = "testplan"+f
+//        name = commonUtils.extractInfraCombination(testplanId)
         tests["${name}"] = {
             node {
                 stage("Parallel Executor : ${executor}") {
                     script {
+                        echo tests.toString()
 
-                        def build = currentBuild.getRawBuild()
-                        def actions = build.getAllActions();
-                        actions.each{act ->
-                            if(act instanceof FlowGraphAction){
-                                def nodes = act.getNodes();
-                                nodes.each{node ->
-                                    if(node instanceof StepStartNode){
-                                        if(node.displayName.endsWith(name)){
-                                            println(name + " : " + node.id)
-                                        }
-                                    }
-
-                                }
-                            }
-                        }
-
+                          getParalleId(currentBuild,name)
 
 //                        def execution = build.getExecution()
 //                        echo "execution " + execution.toString()
@@ -126,38 +114,63 @@ def getTestExecutionMap(parallel_executor_count) {
 //                        echo "DISPLAY_NAME"
 //                        echo stepStartNode.getDisplayName()
 
-                        int processFileCount = 0
-                        if (files.length < parallelExecCount) {
-                            processFileCount = 1
-                        } else {
-                            processFileCount = files.length / parallelExecCount
-                        }
-                        runtime.unstashTestPlansIfNotAvailable("${props.WORKSPACE}/testplans")
-                        if (executor == parallelExecCount) {
-                            for (int i = processFileCount * (executor - 1); i < files.length; i++) {
-                                /*IMPORTANT: Instead of using 'i' directly in your logic below,
-                                you should assign it to a new variable and use it.
-                                (To avoid same 'i-object' being refered)*/
-                                // Execution logic
-                                int fileNo = i
-                                testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/"
-                                        + files[fileNo].name)
-//                                runPlan(files[i], testplanId)
-                            }
-                        } else {
-                            for (int i = 0; i < processFileCount; i++) {
-                                int fileNo = processFileCount * (executor - 1) + i
-                                testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/"
-                                        + files[fileNo].name)
-//                                runPlan(files[fileNo], testplanId)
-                            }
-                        }
+//                        int processFileCount = 0
+//                        if (files.length < parallelExecCount) {
+//                            processFileCount = 1
+//                        } else {
+//                            processFileCount = files.length / parallelExecCount
+//                        }
+//                        runtime.unstashTestPlansIfNotAvailable("${props.WORKSPACE}/testplans")
+//                        if (executor == parallelExecCount) {
+//                            for (int i = processFileCount * (executor - 1); i < files.length; i++) {
+//                                /*IMPORTANT: Instead of using 'i' directly in your logic below,
+//                                you should assign it to a new variable and use it.
+//                                (To avoid same 'i-object' being refered)*/
+//                                // Execution logic
+//                                int fileNo = i
+//                                testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/"
+//                                        + files[fileNo].name)
+////                                runPlan(files[i], testplanId)
+//                            }
+//                        } else {
+//                            for (int i = 0; i < processFileCount; i++) {
+//                                int fileNo = processFileCount * (executor - 1) + i
+//                                testplanId = commonUtils.getTestPlanId("${props.WORKSPACE}/test-plans/"
+//                                        + files[fileNo].name)
+////                                runPlan(files[fileNo], testplanId)
+//                            }
+//                        }
                     }
                 }
             }
         }
     }
     return tests
+}
+
+
+@NonCPS
+def getParalleId(currentBuild,name){
+    def parallelname = name
+    def build = currentBuild.getRawBuild()
+    def actions = build.getAllActions();
+    actions.each{act ->
+        if(act instanceof FlowGraphAction){
+            def nodes = act.getNodes();
+            nodes.each{node ->
+                if(node instanceof StepStartNode){
+                  if(node.displayName.endsWith(parallelname)){
+                      println(parallelname + " : " + node.id.toString())
+                  }
+                }
+
+            }
+        }
+    }
+    currentBuild = null
+    build = null
+    actions = null
+    parallelname = null
 }
 
 def prepareWorkspace(testPlanId, scenarioConfigs) {
