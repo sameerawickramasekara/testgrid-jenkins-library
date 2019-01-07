@@ -52,9 +52,9 @@ class JobCreatorProperties {
  *
  */
 def call() {
-  PipelineContext.instance.setContext(this)
-  def props = Properties.instance
-  props.instance.initProperties()
+//  PipelineContext.instance.setContext(this)
+//  def props = Properties.instance
+//  props.instance.initProperties()
 
   def alert = new Slack()
   def email = new Email()
@@ -65,27 +65,44 @@ def call() {
         label ""
       }
     }
-    environment {
-      GIT_REPO = "${env.GIT_REPO}"
-      GIT_BRANCH = "${env.GIT_BRANCH}"
-    }
+//    environment {
+////      GIT_REPO = "${env.GIT_REPO}"
+////      GIT_BRANCH = "${env.GIT_BRANCH}"
+//    }
 
     stages {
       stage('Create Testgrid Jobs') {
         steps {
-          deleteDir()
-          git url: "https://github.com/${env.GIT_REPO}", branch: "${env.GIT_BRANCH}"
+//          deleteDir()
+//          git url: "https://github.com/${env.GIT_REPO}", branch: "${env.GIT_BRANCH}"
+
+
 
           script {
-            try {
-              def changedFiles = getChangedFiles()
-              process(changedFiles)
-
-              synchronizeJenkinsWithGitRepo()
-              Jenkins.instance.reload()
-            } catch (e) {
-              handleException(e.getMessage(), e)
+            def cred = ""
+            withCredentials([string(credentialsId: "JENKINS_BUILD_TOKEN", variable: 'value')]) {
+              cred = value
             }
+
+            def jobDSL = "@Library('intg_test_templat@dev') _\n" +
+                    "Pipeline()"
+             def parent = Jenkins.instance
+              def folderAwareJobName = "token-test-job"
+              def job = new WorkflowJob(parent, folderAwareJobName)
+              def flowDefinition = new CpsFlowDefinition(jobDSL, true)
+              job.definition = flowDefinition
+              job.concurrentBuild = false
+              job.authToken=new BuildAuthorizationToken("$cred")
+              job.save()
+              Jenkins.instance.reload()
+
+//
+//              synchronizeJenkinsWithGitRepo()
+//              Jenkins.instance.reload()
+//            } catch (e) {
+//              handleException(e.getMessage(), e)
+//            }
+
           }
         }
       }
