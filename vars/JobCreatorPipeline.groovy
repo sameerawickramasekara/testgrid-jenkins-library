@@ -17,6 +17,7 @@
  */
 
 import hudson.model.AbstractItem
+import hudson.model.BuildAuthorizationToken
 import hudson.model.Item
 import hudson.model.TopLevelItem
 import hudson.triggers.TimerTrigger
@@ -234,6 +235,9 @@ def createJenkinsJob(String jobName, String timerConfig, String file, def jobCon
   def flowDefinition = new CpsFlowDefinition(jobDSL, true)
   job.definition = flowDefinition
   job.concurrentBuild = false
+  //Using the depricated object here because in order to trigger remote builds we need to set the
+  //the authToken value.
+  job.authToken = new BuildAuthorizationToken("newAuthToken")
 
   if (timerConfig != null && timerConfig != "") {
     TimerTrigger newCron = new TimerTrigger(timerConfig)
